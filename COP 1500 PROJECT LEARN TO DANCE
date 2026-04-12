@@ -1,0 +1,226 @@
+#pip install pillow
+import tkinter as tk
+from tkinter import messagebox
+import random
+#from PIL import Image, ImageTk
+import time
+import threading
+
+# --- CUSTOM EXCEPTIONS ---
+class DanceError(Exception):
+    """Custom exception for dance-related logic errors."""
+    pass
+
+# --- DATA TYPES & OOP ---
+class DanceSession:
+    """Class to manage the state of a single dance session (OOP)."""
+    def __init__(self, dancer_name: str):
+        self.dancer = dancer_name  # String
+        self.score = 0             # Integer
+        self.is_active = True      # Boolean
+        self.history = []          # List
+        self.performance_ratio = 0.0 # Float
+
+class DanceStudioApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Pro Dance Trainer v2.0")
+        self.root.geometry("700x900")
+        
+        # 1. DICTIONARY (Complex data structure)
+        # Structure: "Name": ( [List of Moves], float_delay, (tuple_metadata) )
+        self.dances = {
+            "The Git Up": (["The Two-Step", "Cowboy Boogie", "The Hoedown", "Take it to the left", "Take a Sip", "Take it Down", "Bring it Up & Crisscross"], 1.0, ("Country", 2019)),
+            "Savage": (["The Intro - Shimmy", "Classy - arms crossed", "Bougie - hair flip, adjust glasses", "Ratchet - drive the car", "Sassy - hand on hip to the side", "Moody - Cross arms, look away", "Nasty - Reach arm up and 'snap'", "Acting Stupid - quick head bob", " Strike a 'Savage' Pose", "Throw it Back - Body roll , leg lift, hand on knee"], 0.9, ("Pop", 2020)),
+            "Lottery (Renegade)": (["Start with a clap, clap", "Cross your arms and hit the woah", "Move your arms from side to side (Left, Right)", "Do the 'wave'", "Tap your shoulders, then hips", "Swing your arms out and back in", "Do a quick body roll", "Finish with a confident pose"], 1.6, ("Hip-Hop", 2020)),
+        }
+        
+        # 2. LIST COMPREHENSION (Collect all unique moves)
+        self.all_moves = list(set([m for moves, d, meta in self.dances.values() for m in moves]))
+        
+        # 3. INITIALIZE SESSION
+        self.session = DanceSession("Guest User")
+        self.current_dance = None
+        self.test_step = 0
+        
+        # --- GUI CONSTRUCTION ---
+        self.setup_main_menu()
+
+    def setup_main_menu(self):
+        """Builds the primary landing page."""
+        self.clear_screen()
+        
+        # Main Container
+        self.main_frame = tk.Frame(self.root, bg="#f0f0f0")
+        self.main_frame.pack(fill="both", expand=True)
+
+        tk.Label(self.main_frame, text="✨ ULTIMATE DANCE TRAINER ✨", 
+                 font=("Helvetica", 22, "bold"), bg="#f0f0f0").pack(pady=20)
+
+        # Image Display Area
+        self.img_label = tk.Label(self.main_frame, text="Pick a Dance to Start", 
+                                 bg="white", width=100, height=36, relief="sunken")
+        self.img_label.pack(pady=10)
+
+        self.status = tk.Label(self.main_frame, text="Waiting for Dancer...", 
+                              font=("Courier", 12), fg="blue", bg="#f0f0f0")
+        self.status.pack(pady=10)
+
+        # 4. CONTROL LOOP (Building buttons from dictionary)
+        btn_zone = tk.Frame(self.main_frame, bg="#f0f0f0")
+        btn_zone.pack(pady=10)
+        
+        for name in self.dances.keys():
+            # TUPLE unpacking in loop
+            moves, delay, meta = self.dances[name]
+            btn_text = f"{name} ({meta[0]})"
+            tk.Button(btn_zone, text=btn_text, width=35, height=2,
+                      command=lambda n=name: self.play_dance(n)).pack(pady=5)
+
+    def play_dance(self, name):
+        """Logic for playing the dance sequence with Thread-Safe UI updates."""
+        self.current_dance = name
+        moves, delay, _ = self.dances[name]
+        
+        def run():
+            try:
+                for i, move in enumerate(moves):
+                    # Progress log
+                    self.session.history.append(move)
+                    
+                    # --- THREAD-SAFE UI UPDATE ---
+                    # Instead of calling .config() directly, we "schedule" it
+                    self.root.after(0, lambda m=move, idx=i: self.status.config(text=f"Move {idx+1}: {m}"))
+                    self.root.after(0, lambda m=move: self.load_visual(m))
+                    
+                    time.sleep(delay)
+                
+                # Final sequence updates
+                self.root.after(0, lambda: self.status.config(text="Sequence Complete!"))
+                self.root.after(500, self.prompt_choice)
+                
+            except Exception as e:
+                # Show error message on the main thread
+                self.root.after(0, lambda err=e: messagebox.showerror("System Error", f"Failed to play dance: {err}"))
+
+        # Start the background thread
+        threading.Thread(target=run, daemon=True).start()
+
+
+    def load_visual(self, move_name):
+        """Function to handle image loading logic."""
+        try:
+            # 6. FILE/IO HANDLING
+            path = f"images/{move_name}.png"
+            img = Image.open(path).resize((250, 250))
+            photo = ImageTk.PhotoImage(img)
+            self.img_label.config(image=photo, text="")
+            self.img_label.image = photo
+        except:
+            # Fallback if image is missing
+            self.img_label.config(image='', text=f"MISSING: {move_name}")
+
+    def prompt_choice(self):
+        """Asks user to Replay or Test."""
+        choice = messagebox.askyesnocancel("Dance Done", "Ready for the Test?\n\nYes: Test Me\nNo: Replay\nCancel: Menu")
+        if choice is True:
+            self.start_testing_mode()
+        elif choice is False:
+            self.play_dance(self.current_dance)
+
+    def start_testing_mode(self):
+        """Transitions to a full-screen test."""
+        self.clear_screen()
+        self.root.attributes("-fullscreen", True)
+        self.test_step = 0
+        self.session.score = 100 
+
+        
+        self.test_frame = tk.Frame(self.root, bg="#2c3e50")
+        self.test_frame.pack(fill="both", expand=True)
+        
+        self.title_lbl = tk.Label(self.test_frame, text="ASSESSMENT MODE", 
+                                 font=("Arial", 30), fg="white", bg="#2c3e50")
+        self.title_lbl.pack(pady=60)
+        
+        self.choice_container = tk.Frame(self.test_frame, bg="#2c3e50")
+        self.choice_container.pack(pady=20)
+        
+        self.render_test_buttons()
+
+    def render_test_buttons(self):
+        """Dynamic button generation for the test."""
+        # Clear container
+        for w in self.choice_container.winfo_children():
+            w.destroy()
+            
+        # 7. LOGIC: Get correct move and distractor moves
+        sequence = self.dances[self.current_dance][0]
+        correct_answer = sequence[self.test_step]
+        
+        # Distractors (Filter out correct answer)
+        others = [m for m in self.all_moves if m != correct_answer]
+        options = random.sample(others, 3) + [correct_answer]
+        random.shuffle(options)
+        
+        # Instruction Label
+        tk.Label(self.choice_container, text=f"Step {self.test_step + 1}: Choose the right move!", 
+                 fg="yellow", bg="#2c3e50", font=("Arial", 18)).pack(pady=20)
+
+        # 8. INPUT HANDLING
+        for opt in options:
+            tk.Button(self.choice_container, text=opt, font=("Arial", 16), width=25,
+                      command=lambda o=opt: self.verify_move(o)).pack(pady=10)
+        
+        # Exit Button
+        tk.Button(self.test_frame, text="Abort Test", command=self.exit_assessment).pack(side="bottom", pady=20)
+
+    def verify_move(self, chosen):
+        """Verifies input and handles scoring/resetting."""
+        sequence = self.dances[self.current_dance][0]
+        correct = sequence[self.test_step]
+        
+        if chosen == correct:
+            self.test_step += 1
+            self.session.score += 10
+            
+            if self.test_step >= len(sequence):
+                messagebox.showinfo("Legendary!", f"You passed! Final Score: {self.session.score}")
+                self.exit_assessment()
+            else:
+                self.render_test_buttons()
+        else:
+            # 9. RESET LOGIC & FAIL
+            self.session.score -= 20  
+            
+            if self.session.score < 60:
+                messagebox.showerror("FAILED", f"Score dropped to {self.session.score}!\nTraining Required.")
+                self.session.score = 0 # Reset score for next time
+                self.exit_assessment()
+            else:
+                messagebox.showwarning("Incorrect", f"Wrong move! Score: {self.session.score}\nBack to step one.")
+                self.test_step = 0
+                self.render_test_buttons()
+
+    def exit_assessment(self):
+        """Restores window and returns to menu."""
+        self.root.attributes("-fullscreen", False)
+        self.clear_screen()
+        self.setup_main_menu()
+
+    def clear_screen(self):
+        """Utility function to wipe the UI."""
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+# --- MAIN EXECUTION ---
+if __name__ == "__main__":
+    try:
+        app_root = tk.Tk()
+        # Initialize Object
+        dance_studio = DanceStudioApp(app_root)
+        app_root.mainloop()
+    except DanceError as de:
+        print(f"Application failed: {de}")
+    except Exception as e:
+        print(f"Unexpected shutdown: {e}")
