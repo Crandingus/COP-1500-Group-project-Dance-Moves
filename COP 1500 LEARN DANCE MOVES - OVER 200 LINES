@@ -292,12 +292,17 @@ def start_testing_mode(self):
         self.setup_main_menu()
 
     # -------------------------------
-    # EXTRA FEATURES (adds lines)
+    # EXTRA FEATURES 
     # -------------------------------
-    def reset_session_ui(self):
-        """Reset session via UI."""
+def reset_session_ui(self):
+    """Reset session safely."""
+    try:
         self.session.reset_session()
-        messagebox.showinfo("Reset", "Session reset!")
+        self.test_step = 0
+        self.current_dance = None
+        messagebox.showinfo("Reset", "Session reset successfully!")
+    except Exception as e:
+        messagebox.showerror("Error", str(e))
 
     def show_stats(self):
         """Display stats."""
