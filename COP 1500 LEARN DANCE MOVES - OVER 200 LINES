@@ -30,11 +30,11 @@ class DanceStudioApp:
             "The Git Up": (["Two-Step", "Cowboy Boogie", "The Hoedown", "Left Slide", "Take a Sip", "Crisscross"], 1.0, ("Country", 2019)),
             "Savage": (["Shimmy", "Classy Cross", "Hair Flip", "Drive the Car", "Sassy Hip", "Nasty Snap", "Body Roll"], 0.8, ("Pop", 2020)),
             "Renegade": (["Clap Clap", "Hit the Woah", "Wave", "Shoulder Tap", "Hip Swing", "Confident Pose"], 1.2, ("Hip-Hop", 2020)),
-            "The Nae Nae": (["One Arm Up", "Sway Side to Side", "Bend Knees", "Whip Motion", "Swag Lean", "Freestyle", "Stanky Leg", "Shoulder Bounce"], 1.1, ("Hip-Hop", 2013))
-            "Supalonely": (["Shoulder Pull", "Head Tilt", "Air Drumming", "Marching Step", "Hip Push", "Body Roll", "The Clock", "Peace Sign", "Shrug"], 0.9, ("Alt-Pop", 2020))
-            "Blinding Lights": (["Running in Place", "Dabbing", "Leg Kicks", "Arm Swings", "Jumping Jacks", "Spinning", "The Sprint", "Side Shuffle", "Neon Glow Walk", "Retro Slide", "Hand Wave", "Quick Kick", "Pose"], 0.9, ("Synth-Pop", 2020))
-            "Tap In": (["Gather Head", "Point Right/Left", "Flower Hand", "Turn Around", "Dice Throw", "W Motion", "Wrist Flick", "Icy Pose", "Lip Swipe", "The Money Count", "Shoulder Pop", "Hair Pull back", "Step-Touch"], 0.9, ("Hip-Hop", 2020))
-            "Say So": (["Punch", "Arm Roll", "Click", "Fist/Faux Kiss", "Body Roll", "Walk Away", "Hip Sway", "Heart Hands", "Hair Twirl", "Disco Point", "Spin Turn", "Shoulder Shimmy", "Final Strike"], 0.9, ("Disco-Pop", 2019))
+            "The Nae Nae": (["One Arm Up", "Sway Side to Side", "Bend Knees", "Whip Motion", "Swag Lean", "Freestyle", "Stanky Leg", "Shoulder Bounce"], 1.1, ("Hip-Hop", 2013)),
+            "Supalonely": (["Shoulder Pull", "Head Tilt", "Air Drumming", "Marching Step", "Hip Push", "Body Roll", "The Clock", "Peace Sign", "Shrug"], 0.9, ("Alt-Pop", 2020)),
+            "Blinding Lights": (["Running in Place", "Dabbing", "Leg Kicks", "Arm Swings", "Jumping Jacks", "Spinning", "The Sprint", "Side Shuffle", "Neon Glow Walk", "Retro Slide", "Hand Wave", "Quick Kick", "Pose"], 0.9, ("Synth-Pop", 2020)),
+            "Tap In": (["Gather Head", "Point Right/Left", "Flower Hand", "Turn Around", "Dice Throw", "W Motion", "Wrist Flick", "Icy Pose", "Lip Swipe", "The Money Count", "Shoulder Pop", "Hair Pull back", "Step-Touch"], 0.9, ("Hip-Hop", 2020)),
+            "Say So": (["Punch", "Arm Roll", "Click", "Fist/Faux Kiss", "Body Roll", "Walk Away", "Hip Sway", "Heart Hands", "Hair Twirl", "Disco Point", "Spin Turn", "Shoulder Shimmy", "Final Strike"], 0.9, ("Disco-Pop", 2019)),
         }
 
         # 4. LIST COMPREHENSION
