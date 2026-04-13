@@ -205,46 +205,27 @@ class DanceStudioApp:
         else:
             self.setup_main_menu()
 
-def start_testing_mode(self):
-    """Start test."""
-    self.clear_screen()
-    self.test_step = 0
-    self.session.score = 100
+    def start_testing_mode(self):
+        """Start test."""
+        self.clear_screen()
+        self.test_step = 0
+        self.mistakes = 0  # Track mistakes for the "3 strikes" rule
 
-    self.test_frame = tk.Frame(self.root, bg="#2c3e50")
-    self.test_frame.pack(fill="both", expand=True)
+        self.test_frame = tk.Frame(self.root, bg="#2c3e50")
+        self.test_frame.pack(fill="both", expand=True)
 
-    # TITLE
-    tk.Label(
-        self.test_frame,
-        text="ASSESSMENT MODE",
-        font=("Arial", 28, "bold"),
-        fg="white",
-        bg="#2c3e50"
-    ).pack(pady=20)
+        # --- NEW UI ELEMENTS ---
+        tk.Label(self.test_frame, text="ASSESSMENT MODE", font=("Arial", 24, "bold"), 
+                 fg="white", bg="#2c3e50").pack(pady=20)
+        
+        tk.Label(self.test_frame, text="Instructions: Get three wrong and you fail!", 
+                 font=("Arial", 12), fg="#ff6b6b", bg="#2c3e50").pack(pady=10)
+        # -----------------------
 
-    # INSTRUCTIONS
-    tk.Label(
-        self.test_frame,
-        text="Select the correct dance move.\nGet 3 wrong and you FAIL.",
-        font=("Arial", 14),
-        fg="#FFD700",
-        bg="#2c3e50"
-    ).pack(pady=10)
+        self.choice_container = tk.Frame(self.test_frame, bg="#2c3e50")
+        self.choice_container.pack(pady=20)
 
-    self.score_label = tk.Label(
-    self.test_frame,
-    text=f"Score: {self.session.score}",
-    font=("Arial", 12),
-    fg="white",
-    bg="#2c3e50"
-    )
-    self.score_label.pack()
-
-    self.choice_container = tk.Frame(self.test_frame, bg="#2c3e50")
-    self.choice_container.pack(pady=20)
-
-    self.render_test_buttons()
+        self.render_test_buttons()
 
     def render_test_buttons(self):
         """Render MCQ options."""
