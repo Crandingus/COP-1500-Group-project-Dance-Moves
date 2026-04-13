@@ -1,348 +1,216 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, simpledialog
 import random
 import time
 import threading
+import json
+import os
 
 # -------------------------------
-# 1. CUSTOM EXCEPTION
-# -------------------------------
-class DanceError(Exception):
-    """Custom exception for dance-related errors."""
-    pass
-
-
-# -------------------------------
-# 2. SESSION CLASS (OOP)
+# 1. SESSION & LEADERBOARD LOGIC
 # -------------------------------
 class DanceSession:
-    """Stores session data for a dancer."""
-
     def __init__(self, dancer_name: str):
         self.dancer = dancer_name
-        self.score = 0
-        self.is_active = True
-        self.history = []
-        self.performance_ratio = 0.0
-        self.total_attempts = 0
-        self.correct_answers = 0
+        self.reset_session()
 
     def reset_session(self):
-        """Reset session stats."""
         self.score = 0
-        self.history.clear()
-        self.performance_ratio = 0.0
         self.total_attempts = 0
         self.correct_answers = 0
+        self.performance_ratio = 0.0
 
     def update_performance(self):
-        """Calculate performance ratio."""
-        if self.total_attempts == 0:
-            self.performance_ratio = 0
-        else:
-            self.performance_ratio = self.correct_answers / self.total_attempts
+        if self.total_attempts > 0:
+            self.performance_ratio = (self.correct_answers / self.total_attempts) * 100
 
+class LeaderboardManager:
+    FILE = "leaderboard.json"
+
+    @staticmethod
+    def save_score(name, score, dance):
+        data = LeaderboardManager.load_scores()
+        data.append({"name": name, "score": round(score, 1), "dance": dance})
+        # Sort by score descending and keep top 10
+        data = sorted(data, key=lambda x: x['score'], reverse=True)[:10]
+        with open(LeaderboardManager.FILE, "w") as f:
+            json.dump(data, f)
+
+    @staticmethod
+    def load_scores():
+        if not os.path.exists(LeaderboardManager.FILE):
+            return []
+        with open(LeaderboardManager.FILE, "r") as f:
+            return json.load(f)
 
 # -------------------------------
-# 3. MAIN APPLICATION CLASS
+# 2. MAIN APPLICATION CLASS
 # -------------------------------
 class DanceStudioApp:
-
     def __init__(self, root):
         self.root = root
-        self.root.title("Pro Dance Trainer v2.0 - Enhanced")
+        self.root.title("Pro Dance Trainer v2.0 - Leaderboard Edition")
         self.root.geometry("800x900")
 
-        # -------------------------------
-        # DICTIONARY DATA STRUCTURE
-        # -------------------------------
         self.dances = {
-            "The Git Up": (["Two-Step", "Cowboy Boogie", "The Hoedown", "Left Slide", "Take a Sip", "Crisscross"], 1.3, ("Easy - 6 steps", 2019)),
-            "Renegade": (["Clap Clap", "Hit the Woah", "Wave", "Shoulder Tap", "Hip Swing", "Confident Pose"], 1.3, ("Easy - 6 steps", 2020)),
-            "Savage": (["Shimmy", "Classy Cross", "Hair Flip", "Drive the Car", "Sassy Hip", "Nasty Snap", "Body Roll"], 1.3, ("Easy - 7 steps", 2020)),
-            "The Nae Nae": (["One Arm Up", "Sway Side to Side", "Bend Knees", "Whip Motion", "Swag Lean", "Freestyle", "Stanky Leg", "Shoulder Bounce"], 1.2, ("Normal - 8 steps", 2013)),
-            "Supalonely": (["Shoulder Pull", "Head Tilt", "Air Drumming", "Marching Step", "Hip Push", "Body Roll", "The Clock", "Peace Sign", "Shrug"], 1.2, ("Normal - 9 steps", 2020)),
-            "Blinding Lights": (["Running in Place", "Dabbing", "Leg Kicks", "Arm Swings", "Jumping Jacks", "Spinning", "The Sprint", "Side Shuffle", "Neon Glow Walk", "Retro Slide", "Hand Wave", "Quick Kick", "Pose"], 1.0, ("Hard - 13 steps", 2020)),
-            "Tap In": (["Gather Head", "Point Right/Left", "Flower Hand", "Turn Around", "Dice Throw", "W Motion", "Wrist Flick", "Icy Pose", "Lip Swipe", "The Money Count", "Shoulder Pop", "Hair Pull back", "Step-Touch"], 1.0, ("Hard - 13 steps", 2020)),
-            "Say So": (["Punch", "Arm Roll", "Click", "Fist/Faux Kiss", "Body Roll", "Walk Away", "Hip Sway", "Heart Hands", "Hair Twirl", "Disco Point", "Spin Turn", "Shoulder Shimmy", "Final Strike"], 1.0, ("Hard - 13 steps", 2019)),
+            "The Git Up": (["Two-Step", "Cowboy Boogie", "The Hoedown", "Left Slide", "Take a Sip", "Crisscross"], 1.3, "Easy"),
+            "Renegade": (["Clap Clap", "Hit the Woah", "Wave", "Shoulder Tap", "Hip Swing", "Confident Pose"], 1.3, "Easy"),
+            "Savage": (["Shimmy", "Classy Cross", "Hair Flip", "Drive the Car", "Sassy Hip", "Nasty Snap", "Body Roll"], 1.3, "Easy"),
+            "The Nae Nae": (["One Arm Up", "Sway Side to Side", "Bend Knees", "Whip Motion", "Swag Lean", "Freestyle", "Stanky Leg", "Shoulder Bounce"], 1.2, "Normal"),
+            "Supalonely": (["Shoulder Pull", "Head Tilt", "Air Drumming", "Marching Step", "Hip Push", "Body Roll", "The Clock", "Peace Sign", "Shrug"], 1.2, "Normal"),
+            "Blinding Lights": (["Running in Place", "Dabbing", "Leg Kicks", "Arm Swings", "Jumping Jacks", "Spinning", "The Sprint", "Side Shuffle", "Neon Glow Walk", "Retro Slide", "Hand Wave", "Quick Kick", "Pose"], 1.0, "Hard"),
+            "Tap In": (["Gather Head", "Point Right/Left", "Flower Hand", "Turn Around", "Dice Throw", "W Motion", "Wrist Flick", "Icy Pose", "Lip Swipe", "The Money Count", "Shoulder Pop", "Hair Pull back", "Step-Touch"], 1.0, "Hard"),
+            "Say So": (["Punch", "Arm Roll", "Click", "Fist/Faux Kiss", "Body Roll", "Walk Away", "Hip Sway", "Heart Hands", "Hair Twirl", "Disco Point", "Spin Turn", "Shoulder Shimmy", "Final Strike"], 1.0, "Hard"),
         }
-        # LIST COMPREHENSION
+        
         self.all_moves = list(set([m for moves, d, meta in self.dances.values() for m in moves]))
-
-        # SESSION
         self.session = DanceSession("Pro Dancer")
-
-        # STATE VARIABLES
         self.current_dance = None
         self.test_step = 0
+        self.mistakes = 0
         self.is_paused = False
-
-    def reset_session_ui(self):
-        self.session = DanceSession("Pro Dancer") # Resets the session object
-        self.status.config(text="Session Reset! Select a routine...")
-        print("Session has been reset.")
-
-    def show_stats(self):
-        # This provides the functionality for the 'View Stats' button
-        print(f"Stats for {self.session.name}: Session Active")
-
-        # COLORS
         self.colors = ["#FF5733", "#33FF57", "#3357FF", "#F333FF", "#FF33A1", "#F3FF33"]
 
-        # INIT UI
         self.setup_main_menu()
 
-    # -------------------------------
-    # UI SETUP
-    # -------------------------------
     def setup_main_menu(self):
-        """Main screen UI."""
         self.clear_screen()
-
         self.main_frame = tk.Frame(self.root, bg="#1a1a1a")
         self.main_frame.pack(fill="both", expand=True)
 
-        tk.Label(self.main_frame, text="🕺 VIRTUAL DANCE STUDIO 💃",
-                 font=("Verdana", 24, "bold"),
-                 fg="cyan", bg="#1a1a1a").pack(pady=20)
+        tk.Label(self.main_frame, text="🕺 DANCE STUDIO v2 💃", font=("Verdana", 24, "bold"), fg="cyan", bg="#1a1a1a").pack(pady=20)
 
-        self.visual_box = tk.Frame(self.main_frame, width=400, height=150,
-                                   bg="#333", relief="ridge", bd=5)
+        self.visual_box = tk.Frame(self.main_frame, width=400, height=150, bg="#333", relief="ridge", bd=5)
         self.visual_box.pack(pady=10)
+        self.visual_box.pack_propagate(False)
 
-        self.move_display = tk.Label(self.visual_box,
-                                     text="READY?",
-                                     font=("Impact", 40),
-                                     fg="white",
-                                     bg="#333")
+        self.move_display = tk.Label(self.visual_box, text="READY?", font=("Impact", 40), fg="white", bg="#333")
         self.move_display.pack(expand=True)
 
-        self.status = tk.Label(self.main_frame,
-                               text="Select a routine...",
-                               fg="#00FF00",
-                               bg="#1a1a1a")
+        self.status = tk.Label(self.main_frame, text="Select a routine...", fg="#00FF00", bg="#1a1a1a")
         self.status.pack(pady=10)
 
-        self.build_buttons()
-
-    def build_buttons(self):
-        """Create dance buttons."""
+        # Dance Buttons
         btn_zone = tk.Frame(self.main_frame, bg="#1a1a1a")
         btn_zone.pack()
-
         for name in self.dances:
-            tk.Button(btn_zone,
-                      text=f"{name} | {self.dances[name][2][0]}",
-                      width=30,
-                      command=lambda n=name: self.play_dance(n)).pack(pady=5)
+            tk.Button(btn_zone, text=f"{name} ({self.dances[name][2]})", width=35, 
+                      command=lambda n=name: self.play_dance(n)).pack(pady=2)
 
-        # EXTRA BUTTONS (adds functionality + lines)
-        tk.Button(self.main_frame, text="Reset Session",
-                  command=self.reset_session_ui).pack(pady=5)
-
-        tk.Button(self.main_frame, text="View Stats",
-                  command=self.show_stats).pack(pady=5)
+        # Global Buttons
+        tk.Button(self.main_frame, text="🏆 VIEW LEADERBOARD", font=("Arial", 10, "bold"), 
+                  bg="#f1c40f", command=self.show_leaderboard).pack(pady=15)
+        
+        nav_frame = tk.Frame(self.main_frame, bg="#1a1a1a")
+        nav_frame.pack()
+        tk.Button(nav_frame, text="Reset Session", command=self.reset_session_ui).pack(side="left", padx=5)
+        tk.Button(nav_frame, text="View Stats", command=self.show_stats).pack(side="left", padx=5)
 
     def clear_screen(self):
-        """Remove all widgets."""
         for widget in self.root.winfo_children():
             widget.destroy()
 
-    # -------------------------------
-    # CORE LOGIC
-    # -------------------------------
     def play_dance(self, name):
-        """Play dance sequence."""
         self.current_dance = name
         moves, delay, _ = self.dances[name]
+        def run():
+            for i, move in enumerate(moves):
+                while self.is_paused: time.sleep(0.1)
+                self.root.after(0, lambda m=move, idx=i: self.status.config(text=f"STEP {idx + 1}: {m}"))
+                self.root.after(0, lambda m=move: self.move_display.config(text=m, fg=random.choice(self.colors)))
+                time.sleep(delay)
+            self.root.after(0, self.prompt_choice)
+        threading.Thread(target=run, daemon=True).start()
 
-        def run_sequence():
-            try:
-                for i, move in enumerate(moves):
-
-                    # Pause support
-                    while self.is_paused:
-                        time.sleep(0.1)
-
-                    self.session.history.append(move)
-
-                    self.root.after(0,
-                        lambda m=move, idx=i:
-                        self.status.config(text=f"STEP {idx + 1}: {m}")
-                    )
-
-                    self.root.after(0,
-                        lambda m=move:
-                        self.update_visual_effect(m)
-                    )
-
-                    time.sleep(delay)
-
-                self.root.after(0, lambda: self.end_sequence())
-
-            except Exception as e:
-                self.handle_error(e)
-
-        threading.Thread(target=run_sequence, daemon=True).start()
-
-    def update_visual_effect(self, move_name):
-        """Update color + text."""
-        color = random.choice(self.colors)
-        self.move_display.config(text=move_name, fg=color)
-
-    def end_sequence(self):
-        """After dance ends."""
-        self.status.config(text="Finished!")
-        self.prompt_choice()
-
-    # -------------------------------
-    # TEST MODE
-    # -------------------------------
     def prompt_choice(self):
-        """Ask user for test."""
-        if messagebox.askyesno("Test?", "Take test?"):
+        if messagebox.askyesno("Assessment", "Are You Ready To Test Your Step Knowledge?"):
             self.start_testing_mode()
         else:
             self.setup_main_menu()
 
     def start_testing_mode(self):
-        """Start test with 3-strike rule."""
         self.clear_screen()
         self.test_step = 0
-        self.mistakes = 0  # Track mistakes for the failure rule
-
-        # 1. Create the container frame
-        self.test_frame = tk.Frame(self.root, bg="#2c3e50")
-        self.test_frame.pack(fill="both", expand=True) # CRITICAL: Pack the frame!
-
-        # 2. Add Title and Instructions
-        tk.Label(self.test_frame, text="ASSESSMENT MODE", 
-                 font=("Arial", 24, "bold"), fg="white", bg="#2c3e50").pack(pady=20)
+        self.mistakes = 0
+        self.session.reset_session()
         
-        tk.Label(self.test_frame, text="Instructions: Get three wrong and you fail!", 
-                 font=("Arial", 12), fg="#ff6b6b", bg="#2c3e50").pack(pady=10)
+        self.test_frame = tk.Frame(self.root, bg="#2c3e50")
+        self.test_frame.pack(fill="both", expand=True)
 
-        # 3. Container for buttons
+        tk.Label(self.test_frame, text="ASSESSMENT MODE", font=("Verdana", 28, "bold"), fg="#f1c40f", bg="#2c3e50").pack(pady=20)
+        tk.Label(self.test_frame, text="Get three wrong and you fail!", font=("Arial", 14), fg="#e74c3c", bg="#2c3e50").pack(pady=5)
+        
+        self.progress_label = tk.Label(self.test_frame, text="", font=("Arial", 12), fg="white", bg="#2c3e50")
+        self.progress_label.pack(pady=5)
+
         self.choice_container = tk.Frame(self.test_frame, bg="#2c3e50")
-        self.choice_container.pack(pady=20)
-
+        self.choice_container.pack(pady=30)
         self.render_test_buttons()
 
-    def verify_move(self, chosen):
-        """Check answer and apply 3-strike rule."""
-        sequence = self.dances[self.current_dance][0]
-        correct = sequence[self.test_step]
-
-        if chosen == correct:
-            self.test_step += 1
-            # If dance is finished, show results
-            if self.test_step >= len(sequence):
-                self.show_results()
-                return
-        else:
-            self.mistakes += 1
-            messagebox.showwarning("Wrong!", f"Mistakes: {self.mistakes}/3")
-
-        # Check for failure (3 mistakes)
-        if self.mistakes >= 3:
-            messagebox.showerror("Failed", "You got 3 wrong. Assessment over!")
-            self.exit_assessment()
-        else:
-            # Refresh buttons for the next step (or same step if wrong)
-            self.render_test_buttons()
-
-   
-
     def render_test_buttons(self):
-        """Render MCQ options."""
-        for w in self.choice_container.winfo_children():
-            w.destroy()
-
+        for w in self.choice_container.winfo_children(): w.destroy()
         sequence = self.dances[self.current_dance][0]
-
+        
         if self.test_step < len(sequence):
-
+            self.progress_label.config(text=f"Step: {self.test_step + 1}/{len(sequence)} | Mistakes: {self.mistakes}/3")
             correct = sequence[self.test_step]
             others = [m for m in self.all_moves if m != correct]
-
-            options = random.sample(others, min(3, len(others))) + [correct]
+            options = random.sample(others, 3) + [correct]
             random.shuffle(options)
 
             for opt in options:
-                tk.Button(self.choice_container,
-                          text=opt,
+                tk.Button(self.choice_container, text=opt, width=25, font=("Arial", 11), 
                           command=lambda o=opt: self.verify_move(o)).pack(pady=5)
         else:
-            self.show_results()
+            self.finish_assessment()
 
     def verify_move(self, chosen):
-        """Check answer."""
         sequence = self.dances[self.current_dance][0]
         correct = sequence[self.test_step]
-        self.score_label.config(text=f"Score: {self.session.score}")
-
         self.session.total_attempts += 1
 
         if chosen == correct:
             self.session.correct_answers += 1
             self.test_step += 1
-        else:
-            self.session.score -= 20
-
-        self.session.update_performance()
-
-        if self.session.score < 60:
-            messagebox.showerror("Fail", "Score too low")
-            self.exit_assessment()
-        else:
             self.render_test_buttons()
+        else:
+            self.mistakes += 1
+            if self.mistakes >= 3:
+                messagebox.showerror("FAILED", "Three strikes! Returning to menu.")
+                self.setup_main_menu()
+            else:
+                messagebox.showwarning("WRONG", f"Incorrect! Strike {self.mistakes}/3")
+                self.render_test_buttons()
 
-    def show_results(self):
-        """Final results."""
-        msg = f"Score: {self.session.score}\nPerformance: {self.session.performance_ratio:.2f}"
-        messagebox.showinfo("Results", msg)
-        self.exit_assessment()
-
-    def exit_assessment(self):
-        """Exit test."""
+    def finish_assessment(self):
+        self.session.update_performance()
+        score = self.session.performance_ratio
+        messagebox.showinfo("Success", f"Score: {score:.1f}%")
+        
+        name = simpledialog.askstring("High Score", "Enter your name for the leaderboard:")
+        if name:
+            LeaderboardManager.save_score(name, score, self.current_dance)
         self.setup_main_menu()
 
-    # -------------------------------
-    # EXTRA FEATURES 
-    # -------------------------------
-def reset_session_ui(self):
-    """Reset session safely."""
-    try:
+    def show_leaderboard(self):
+        scores = LeaderboardManager.load_scores()
+        board_text = "🏆 TOP 10 DANCERS 🏆\n" + "-"*30 + "\n"
+        if not scores:
+            board_text += "No scores yet!"
+        for i, entry in enumerate(scores):
+            board_text += f"{i+1}. {entry['name']} - {entry['score']}% ({entry['dance']})\n"
+        
+        messagebox.showinfo("Leaderboard", board_text)
+
+    def reset_session_ui(self):
         self.session.reset_session()
-        self.test_step = 0
-        self.current_dance = None
-        messagebox.showinfo("Reset", "Session reset successfully!")
-    except Exception as e:
-        messagebox.showerror("Error", str(e))
+        messagebox.showinfo("Reset", "Session cleared.")
 
     def show_stats(self):
-        """Display stats."""
-        stats = (
-            f"Dancer: {self.session.dancer}\n"
-            f"Score: {self.session.score}\n"
-            f"Attempts: {self.session.total_attempts}\n"
-            f"Correct: {self.session.correct_answers}\n"
-            f"Performance: {self.session.performance_ratio:.2f}"
-        )
-        messagebox.showinfo("Stats", stats)
+        self.session.update_performance()
+        msg = f"Dancer: {self.session.dancer}\nPerformance: {self.session.performance_ratio:.1f}%"
+        messagebox.showinfo("Stats", msg)
 
-    def toggle_pause(self):
-        """Pause system."""
-        self.is_paused = not self.is_paused
-
-    def handle_error(self, error):
-        """Central error handler."""
-        messagebox.showerror("Error", str(error))
-
-
-# -------------------------------
-# MAIN ENTRY POINT
-# -------------------------------
 if __name__ == "__main__":
     root = tk.Tk()
     app = DanceStudioApp(root)
