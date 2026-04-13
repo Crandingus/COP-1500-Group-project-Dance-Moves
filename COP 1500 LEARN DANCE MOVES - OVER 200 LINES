@@ -77,6 +77,15 @@ class DanceStudioApp:
         self.test_step = 0
         self.is_paused = False
 
+    def reset_session_ui(self):
+        self.session = DanceSession("Pro Dancer") # Resets the session object
+        self.status.config(text="Session Reset! Select a routine...")
+        print("Session has been reset.")
+
+    def show_stats(self):
+        # This provides the functionality for the 'View Stats' button
+        print(f"Stats for {self.session.name}: Session Active")
+
         # COLORS
         self.colors = ["#FF5733", "#33FF57", "#3357FF", "#F333FF", "#FF33A1", "#F3FF33"]
 
