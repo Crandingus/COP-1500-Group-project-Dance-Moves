@@ -30,8 +30,11 @@ class DanceStudioApp:
             "The Git Up": (["Two-Step", "Cowboy Boogie", "The Hoedown", "Left Slide", "Take a Sip", "Crisscross"], 1.0, ("Country", 2019)),
             "Savage": (["Shimmy", "Classy Cross", "Hair Flip", "Drive the Car", "Sassy Hip", "Nasty Snap", "Body Roll"], 0.8, ("Pop", 2020)),
             "Renegade": (["Clap Clap", "Hit the Woah", "Wave", "Shoulder Tap", "Hip Swing", "Confident Pose"], 1.2, ("Hip-Hop", 2020)),
-            "Electric Slide": (["Step Right", "Grapevine Left", "Back Step", "Knee Lift", "The Pivot", "Brush Step"], 1.1, ("Disco", 1976)),
-            "Macarena": (["Hands Out", "Flip Palms", "Shoulder Cross", "Head Touch", "Hip Rotate", "Jump Turn"], 0.9, ("Latin", 1993))
+            "The Nay Nay": (["Step Right", "Grapevine Left", "Back Step", "Knee Lift", "The Pivot", "Brush Step"], 1.1, ("genre", year)),
+            "Supalonely": (["Hands Out", "Flip Palms", "Shoulder Cross", "Head Touch", "Hip Rotate", "Jump Turn"], 0.9, ("genre", year)),
+            "Blinding Lights": (["Hands Out", "Flip Palms", "Shoulder Cross", "Head Touch", "Hip Rotate", "Jump Turn"], 0.9, ("genre", year)),
+            "Tap In": (["Hands Out", "Flip Palms", "Shoulder Cross", "Head Touch", "Hip Rotate", "Jump Turn"], 0.9, ("genre", year)),
+            "Say So": (["Hands Out", "Flip Palms", "Shoulder Cross", "Head Touch", "Hip Rotate", "Jump Turn"], 0.9, ("genre", year)),
         }
 
         # 4. LIST COMPREHENSION
