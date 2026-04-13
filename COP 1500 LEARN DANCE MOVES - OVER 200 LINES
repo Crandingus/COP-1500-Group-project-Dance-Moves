@@ -56,7 +56,7 @@ class DanceStudioApp:
 
         tk.Label(self.main_frame, text="🕺 VIRTUAL DANCE STUDIO 💃", font=("Verdana", 24, "bold"), fg="cyan", bg="#1a1a1a").pack(pady=20)
 
-        self.visual_box = tk.Frame(self.main_frame, width=400, height=300, bg="#333", relief="ridge", bd=5)
+        self.visual_box = tk.Frame(self.main_frame, width=400, height=100, bg="#333", relief="ridge", bd=5)
         self.visual_box.pack_propagate(False)
         self.visual_box.pack(pady=10)
 
