@@ -123,7 +123,7 @@ class DanceStudioApp:
 
         for name in self.dances:
             tk.Button(btn_zone,
-                      text=name,
+                      text=f"{name} | {self.dances[name][2][0]}",
                       width=30,
                       command=lambda n=name: self.play_dance(n)).pack(pady=5)
 
