@@ -206,26 +206,52 @@ class DanceStudioApp:
             self.setup_main_menu()
 
     def start_testing_mode(self):
-        """Start test."""
+        """Start test with 3-strike rule."""
         self.clear_screen()
         self.test_step = 0
-        self.mistakes = 0  # Track mistakes for the "3 strikes" rule
+        self.mistakes = 0  # Track mistakes for the failure rule
 
+        # 1. Create the container frame
         self.test_frame = tk.Frame(self.root, bg="#2c3e50")
-        self.test_frame.pack(fill="both", expand=True)
+        self.test_frame.pack(fill="both", expand=True) # CRITICAL: Pack the frame!
 
-        # --- NEW UI ELEMENTS ---
-        tk.Label(self.test_frame, text="ASSESSMENT MODE", font=("Arial", 24, "bold"), 
-                 fg="white", bg="#2c3e50").pack(pady=20)
+        # 2. Add Title and Instructions
+        tk.Label(self.test_frame, text="ASSESSMENT MODE", 
+                 font=("Arial", 24, "bold"), fg="white", bg="#2c3e50").pack(pady=20)
         
         tk.Label(self.test_frame, text="Instructions: Get three wrong and you fail!", 
                  font=("Arial", 12), fg="#ff6b6b", bg="#2c3e50").pack(pady=10)
-        # -----------------------
 
+        # 3. Container for buttons
         self.choice_container = tk.Frame(self.test_frame, bg="#2c3e50")
         self.choice_container.pack(pady=20)
 
         self.render_test_buttons()
+
+    def verify_move(self, chosen):
+        """Check answer and apply 3-strike rule."""
+        sequence = self.dances[self.current_dance][0]
+        correct = sequence[self.test_step]
+
+        if chosen == correct:
+            self.test_step += 1
+            # If dance is finished, show results
+            if self.test_step >= len(sequence):
+                self.show_results()
+                return
+        else:
+            self.mistakes += 1
+            messagebox.showwarning("Wrong!", f"Mistakes: {self.mistakes}/3")
+
+        # Check for failure (3 mistakes)
+        if self.mistakes >= 3:
+            messagebox.showerror("Failed", "You got 3 wrong. Assessment over!")
+            self.exit_assessment()
+        else:
+            # Refresh buttons for the next step (or same step if wrong)
+            self.render_test_buttons()
+
+   
 
     def render_test_buttons(self):
         """Render MCQ options."""
