@@ -4,56 +4,65 @@ import random
 import time
 import threading
 
+
 # --- 1. CUSTOM EXCEPTIONS ---
 class DanceError(Exception):
     """Custom exception for dance-related logic errors."""
     pass
 
+
 # --- 2. DATA TYPES & OOP ---
 class DanceSession:
     """Class to manage the state of a single dance session (OOP)."""
+
     def __init__(self, dancer_name: str):
-        self.dancer = dancer_name      # String
-        self.score = 0                 # Integer
-        self.is_active = True          # Boolean
-        self.history = []              # List
-        self.performance_ratio = 0.0   # Float
+        self.dancer = dancer_name  # String
+        self.score = 0  # Integer
+        self.is_active = True  # Boolean
+        self.history = []  # List
+        self.performance_ratio = 0.0  # Float
+
 
 class DanceStudioApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Pro Dance Trainer v2.0 - No-Image Edition")
         self.root.geometry("800x900")
-        
+
         # 3. DICTIONARY (Complex data structure)
         # Structure: "Name": ( [List of Moves], float_delay, (tuple_metadata) )
         self.dances = {
-            "The Git Up": (["Two-Step", "Cowboy Boogie", "The Hoedown", "Left Slide", "Take a Sip", "Crisscross"], 1.0, ("Country", 2019)),
-            "Savage": (["Shimmy", "Classy Cross", "Hair Flip", "Drive the Car", "Sassy Hip", "Nasty Snap", "Body Roll"], 0.8, ("Pop", 2020)),
-            "Renegade": (["Clap Clap", "Hit the Woah", "Wave", "Shoulder Tap", "Hip Swing", "Confident Pose"], 1.2, ("Hip-Hop", 2020)),
-            "Electric Slide": (["Step Right", "Grapevine Left", "Back Step", "Knee Lift", "The Pivot", "Brush Step"], 1.1, ("Disco", 1976)),
-            "Macarena": (["Hands Out", "Flip Palms", "Shoulder Cross", "Head Touch", "Hip Rotate", "Jump Turn"], 0.9, ("Latin", 1993))
+            "The Git Up": (["Two-Step", "Cowboy Boogie", "The Hoedown", "Left Slide", "Take a Sip", "Crisscross"], 1.0,
+                           ("Country", 2019)),
+            "Savage": (["Shimmy", "Classy Cross", "Hair Flip", "Drive the Car", "Sassy Hip", "Nasty Snap", "Body Roll"],
+                       0.8, ("Pop", 2020)),
+            "Renegade": (["Clap Clap", "Hit the Woah", "Wave", "Shoulder Tap", "Hip Swing", "Confident Pose"], 1.2,
+                         ("Hip-Hop", 2020)),
+            "Electric Slide": (["Step Right", "Grapevine Left", "Back Step", "Knee Lift", "The Pivot", "Brush Step"],
+                               1.1, ("Disco", 1976)),
+            "Macarena": (["Hands Out", "Flip Palms", "Shoulder Cross", "Head Touch", "Hip Rotate", "Jump Turn"], 0.9,
+                         ("Latin", 1993))
         }
-        
+
         # 4. LIST COMPREHENSION (Collect all unique moves for the test distractors)
         self.all_moves = list(set([m for moves, d, meta in self.dances.values() for m in moves]))
-        
+
         # 5. INITIALIZE SESSION
         self.session = DanceSession("Pro Dancer")
         self.current_dance = None
         self.test_step = 0
         self.colors = ["#FF5733", "#33FF57", "#3357FF", "#F333FF", "#FF33A1", "#F3FF33"]
-        
+
         self.setup_main_menu()
 
     def setup_main_menu(self):
         """Builds the primary landing page."""
         self.clear_screen()
-        
+
         self.main_frame = tk.Frame(self.root, bg="#1a1a1a")
         self.main_frame.pack(fill="both", expand=True)
 
-        tk.Label(self.main_frame, text="🕺 VIRTUAL DANCE STUDIO 💃", 
+        tk.Label(self.main_frame, text="🕺 VIRTUAL DANCE STUDIO 💃",
                  font=("Verdana", 24, "bold"), fg="cyan", bg="#1a1a1a").pack(pady=20)
 
         # 6. DYNAMIC TEXT VISUALIZER (Replaces Image Label)
@@ -61,18 +70,18 @@ class DanceStudioApp:
         self.visual_box.pack_propagate(False)
         self.visual_box.pack(pady=10)
 
-        self.move_display = tk.Label(self.visual_box, text="READY?", font=("Impact", 40), 
-                                    fg="white", bg="#333", wraplength=350)
+        self.move_display = tk.Label(self.visual_box, text="READY?", font=("Impact", 40),
+                                     fg="white", bg="#333", wraplength=350)
         self.move_display.pack(expand=True)
 
-        self.status = tk.Label(self.main_frame, text="Select a routine to begin training...", 
-                              font=("Courier", 14), fg="#00FF00", bg="#1a1a1a")
+        self.status = tk.Label(self.main_frame, text="Select a routine to begin training...",
+                               font=("Courier", 14), fg="#00FF00", bg="#1a1a1a")
         self.status.pack(pady=10)
 
         # 7. CONTROL LOOP (Building buttons via iteration)
         btn_zone = tk.Frame(self.main_frame, bg="#1a1a1a")
         btn_zone.pack(pady=10)
-        
+
         for name in self.dances.keys():
             moves, delay, meta = self.dances[name]
             btn_text = f"{name.upper()} | {meta[0]}"
@@ -89,22 +98,22 @@ class DanceStudioApp:
         """Logic for playing sequence with Thread-Safe UI updates."""
         self.current_dance = name
         moves, delay, _ = self.dances[name]
-        
+
         def run_sequence():
             try:
                 for i, move in enumerate(moves):
                     # Data tracking
                     self.session.history.append(move)
-                    
+
                     # UI Updates via .after (Thread-safe)
-                    self.root.after(0, lambda m=move, idx=i: self.status.config(text=f"STEP {idx+1}: {m}"))
+                    self.root.after(0, lambda m=move, idx=i: self.status.config(text=f"STEP {idx + 1}: {m}"))
                     self.root.after(0, lambda m=move: self.update_visual_effect(m))
-                    
+
                     time.sleep(delay)
-                
+
                 self.root.after(0, lambda: self.status.config(text="Routine Finished!"))
                 self.root.after(800, self.prompt_choice)
-                
+
             except Exception as e:
                 self.root.after(0, lambda: messagebox.showerror("Engine Error", f"Trace: {e}"))
 
@@ -126,38 +135,40 @@ class DanceStudioApp:
             self.setup_main_menu()
 
     def start_testing_mode(self):
-        """Transitions to an assessment view."""
+        """Transitions to a full-screen test."""
         self.clear_screen()
+        self.root.attributes("-fullscreen", True)
         self.test_step = 0
-        self.session.score = 0 
+        self.session.score = 100
 
-        self.test_frame = tk.Frame(self.root, bg="#000")
+        self.test_frame = tk.Frame(self.root, bg="#2c3e50")
         self.test_frame.pack(fill="both", expand=True)
-        
-        tk.Label(self.test_frame, text="STRICT ASSESSMENT", 
-                 font=("System", 30, "bold"), fg="red", bg="#000").pack(pady=40)
-        
-        self.choice_container = tk.Frame(self.test_frame, bg="#000")
+
+        self.title_lbl = tk.Label(self.test_frame, text="ASSESSMENT MODE",
+                                  font=("Arial", 30), fg="white", bg="#2c3e50")
+        self.title_lbl.pack(pady=60)
+
+        self.choice_container = tk.Frame(self.test_frame, bg="#2c3e50")
         self.choice_container.pack(pady=20)
-        
+
         self.render_test_buttons()
 
     def render_test_buttons(self):
         """Dynamic logic to generate multiple-choice options."""
         for w in self.choice_container.winfo_children():
             w.destroy()
-            
+
         sequence = self.dances[self.current_dance][0]
-        
+
         if self.test_step < len(sequence):
             correct_answer = sequence[self.test_step]
-            
+
             # 8. FILTERING & SAMPLING
             others = [m for m in self.all_moves if m != correct_answer]
             options = random.sample(others, 3) + [correct_answer]
             random.shuffle(options)
-            
-            tk.Label(self.choice_container, text=f"Identify Step #{self.test_step + 1}:", 
+
+            tk.Label(self.choice_container, text=f"Identify Step #{self.test_step + 1}:",
                      fg="white", bg="#000", font=("Arial", 18)).pack(pady=20)
 
             for opt in options:
@@ -168,15 +179,31 @@ class DanceStudioApp:
             self.show_results()
 
     def verify_move(self, chosen):
-        """Scoring logic and state progression."""
+        """Verifies input and handles scoring/resetting."""
         sequence = self.dances[self.current_dance][0]
-        if chosen == sequence[self.test_step]:
+        correct = sequence[self.test_step]
+
+        if chosen == correct:
             self.test_step += 1
-            self.session.score += 20
-            self.render_test_buttons()
+            self.session.score += 10
+
+            if self.test_step >= len(sequence):
+                messagebox.showinfo("Legendary!", f"You passed! Final Score: {self.session.score}")
+                self.exit_assessment()
+            else:
+                self.render_test_buttons()
         else:
-            messagebox.showerror("WRONG", f"That wasn't it! You missed step {self.test_step+1}.")
-            self.setup_main_menu()
+            # 9. RESET LOGIC & FAIL
+            self.session.score -= 20
+
+            if self.session.score < 60:
+                messagebox.showerror("FAILED", f"Score dropped to {self.session.score}!\nTraining Required.")
+                self.session.score = 0  # Reset score for next time
+                self.exit_assessment()
+            else:
+                messagebox.showwarning("Incorrect", f"Wrong move! Score: {self.session.score}\nBack to step one.")
+                self.test_step = 0
+                self.render_test_buttons()
 
     def show_results(self):
         """Final summary logic."""
@@ -184,8 +211,11 @@ class DanceStudioApp:
         messagebox.showinfo("Certified!", final_msg)
         self.setup_main_menu()
 
+
+
 # --- 9. MAIN EXECUTION ---
 if __name__ == "__main__":
     root = tk.Tk()
     app = DanceStudioApp(root)
     root.mainloop()
+
