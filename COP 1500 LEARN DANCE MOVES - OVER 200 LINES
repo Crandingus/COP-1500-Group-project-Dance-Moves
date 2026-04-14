@@ -126,104 +126,132 @@ class DanceStudioApp: # Define the main application class for the Dance Studio a
         moves, delay, _ = self.dances[name]
         # A nested function that will run in the background so the app doesn't freeze
         def run():
-            for i, move in enumerate(moves):
-                while self.is_paused: time.sleep(0.1)
+            for i, move in enumerate(moves): # Loop through every move in the routine
+                while self.is_paused: time.sleep(0.1) # If paused, wait here and do nothing
+                # Update the status text safely using 'after' to talk to the main thread
                 self.root.after(0, lambda m=move, idx=i: self.status.config(text=f"STEP {idx + 1}: {m}"))
+                # Randomly change the color of the move text to make it look like a dance floor
                 self.root.after(0, lambda m=move: self.move_display.config(text=m, fg=random.choice(self.colors)))
-                time.sleep(delay)
-            self.root.after(0, self.prompt_choice)
+                time.sleep(delay) # Wait for the specified amount of time before showing the next move
+            self.root.after(0, self.prompt_choice) # When the dance is over, ask if they want to take the test
+        # Start the 'run' function on a separate "thread" so the user can still click buttons
         threading.Thread(target=run, daemon=True).start()
 
+    # Asks the user if they want to take the assessment test
     def prompt_choice(self):
         if messagebox.askyesno("Assessment", "Are You Ready To Test Your Step Knowledge?"):
-            self.start_testing_mode()
+            self.start_testing_mode() # Start the multiple choice test
         else:
-            self.setup_main_menu()
+            self.setup_main_menu() # Go back to the main menu
 
+    # Sets up the testing screen layout
     def start_testing_mode(self):
         self.clear_screen()
-        self.test_step = 0
-        self.mistakes = 0
-        self.session.reset_session()
+        self.test_step = 0 # Start at the first move
+        self.mistakes = 0 # Start with zero mistakes
+        self.session.reset_session() # Wipe the current session stats
         
-        self.test_frame = tk.Frame(self.root, bg="#2c3e50")
+        self.test_frame = tk.Frame(self.root, bg="#2c3e50") # Use a different color for "Test Mode"
         self.test_frame.pack(fill="both", expand=True)
 
         tk.Label(self.test_frame, text="ASSESSMENT MODE", font=("Verdana", 28, "bold"), fg="#f1c40f", bg="#2c3e50").pack(pady=20)
         tk.Label(self.test_frame, text="Get three wrong and you fail!", font=("Arial", 14), fg="#e74c3c", bg="#2c3e50").pack(pady=5)
-        
+
+        # Label that shows things like "Step 2/10 | Mistakes: 1/3"
         self.progress_label = tk.Label(self.test_frame, text="", font=("Arial", 12), fg="white", bg="#2c3e50")
         self.progress_label.pack(pady=5)
 
+        # Container for the answer buttons
         self.choice_container = tk.Frame(self.test_frame, bg="#2c3e50")
         self.choice_container.pack(pady=30)
         self.render_test_buttons()
 
+    # Generates the multiple-choice buttons for the current step in the test
     def render_test_buttons(self):
+        # Clear the previous set of buttons
         for w in self.choice_container.winfo_children(): w.destroy()
-        sequence = self.dances[self.current_dance][0]
-        
+        sequence = self.dances[self.current_dance][0] # Get the list of correct moves
+
+        # Check if we still have more moves to test
         if self.test_step < len(sequence):
+            # Update the progress display
             self.progress_label.config(text=f"Step: {self.test_step + 1}/{len(sequence)} | Mistakes: {self.mistakes}/3")
-            correct = sequence[self.test_step]
+            correct = sequence[self.test_step] # The actual next move in the routine
+            # Pick 3 random wrong moves from the master list
             others = [m for m in self.all_moves if m != correct]
             options = random.sample(others, 3) + [correct]
-            random.shuffle(options)
+            random.shuffle(options) # Shuffle so the correct answer isn't always at the end
 
+            # Create a button for each option
             for opt in options:
                 tk.Button(self.choice_container, text=opt, width=25, font=("Arial", 11), 
                           command=lambda o=opt: self.verify_move(o)).pack(pady=5)
         else:
+            # If the user finished all steps, go to the final screen
             self.finish_assessment()
 
+    # Checks if the button the user clicked is the correct move
     def verify_move(self, chosen):
         sequence = self.dances[self.current_dance][0]
         correct = sequence[self.test_step]
-        self.session.total_attempts += 1
+        self.session.total_attempts += 1 # Log that they made an attempt
 
         if chosen == correct:
-            self.session.correct_answers += 1
-            self.test_step += 1
-            self.render_test_buttons()
+            self.session.correct_answers += 1 # Log a correct answer
+            self.test_step += 1 # Move to the next move in the dance
+            self.render_test_buttons() # Update the buttons for the next step
         else:
-            self.mistakes += 1
+            self.mistakes += 1 # Log a mistake
             if self.mistakes >= 3:
+                # If they hit 3 mistakes, they fail and go back to menu
                 messagebox.showerror("FAILED", "Three strikes! Returning to menu.")
                 self.setup_main_menu()
             else:
+                # Show a warning and let them try the current step again
                 messagebox.showwarning("WRONG", f"Incorrect! Strike {self.mistakes}/3")
                 self.render_test_buttons()
 
+    # Runs when the user completes a full dance assessment successfully
     def finish_assessment(self):
-        self.session.update_performance()
+        self.session.update_performance() # Calculate the percentage score
         score = self.session.performance_ratio
         messagebox.showinfo("Success", f"Score: {score:.1f}%")
-        
+
+        # Ask for their name to save to the leaderboard        
         name = simpledialog.askstring("High Score", "Enter your name for the leaderboard:")
         if name:
+            # Tell the LeaderboardManager to save this result to a file/list
             LeaderboardManager.save_score(name, score, self.current_dance)
         self.setup_main_menu()
 
+    # Pulls data from the LeaderboardManager and shows it in a popup
     def show_leaderboard(self):
-        scores = LeaderboardManager.load_scores()
+        scores = LeaderboardManager.load_scores() # Load the list of saved high scores
         board_text = "🏆 TOP 10 DANCERS 🏆\n" + "-"*30 + "\n"
         if not scores:
             board_text += "No scores yet!"
+        # Loop through the top scores and format them as a numbered list
         for i, entry in enumerate(scores):
             board_text += f"{i+1}. {entry['name']} - {entry['score']}% ({entry['dance']})\n"
         
         messagebox.showinfo("Leaderboard", board_text)
 
+    # Resets all current session data to zero
     def reset_session_ui(self):
         self.session.reset_session()
         messagebox.showinfo("Reset", "Session cleared.")
 
+    # Shows a popup with the current user's performance statistics
     def show_stats(self):
         self.session.update_performance()
         msg = f"Dancer: {self.session.dancer}\nPerformance: {self.session.performance_ratio:.1f}%"
         messagebox.showinfo("Stats", msg)
 
+# This checks if this script is being run directly (not imported as a module)
 if __name__ == "__main__":
+    # Creates the main, top-level window for the application (the 'root')
     root = tk.Tk()
+    # Passes that window into your DanceStudioApp class to build the interface inside it
     app = DanceStudioApp(root)
+    # Starts the Tkinter event loop, which keeps the window open and listening for clicks
     root.mainloop()
