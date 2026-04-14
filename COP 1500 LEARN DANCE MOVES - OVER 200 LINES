@@ -48,13 +48,14 @@ class LeaderboardManager: # Defines the filename where high scores are permanent
 # -------------------------------
 # 2. MAIN APPLICATION CLASS
 # -------------------------------
-class DanceStudioApp:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Pro Dance Trainer v2.0 - Leaderboard Edition")
-        self.root.geometry("800x900")
+class DanceStudioApp: # Define the main application class for the Dance Studio app
+    def __init__(self, root): # The initialization method that runs when you first create the app
+        self.root = root # Store the main window (root) as an attribute of the class
+        self.root.title("Pro Dance Trainer v2.0 - Leaderboard Edition") # Set the title at the top of the window
+        self.root.geometry("800x900") ")  # Set the starting width and height of the window in pixels
 
-        self.dances = {
+            # A dictionary storing dance routines: "Name": ([List of Moves], Speed/Delay, "Difficulty")
+        self.dances = { 
             "The Git Up": (["Two-Step", "Cowboy Boogie", "The Hoedown", "Left Slide", "Take a Sip", "Crisscross"], 1.3, "Easy"),
             "Renegade": (["Clap Clap", "Hit the Woah", "Wave", "Shoulder Tap", "Hip Swing", "Confident Pose"], 1.3, "Easy"),
             "Savage": (["Shimmy", "Classy Cross", "Hair Flip", "Drive the Car", "Sassy Hip", "Nasty Snap", "Body Roll"], 1.3, "Easy"),
@@ -65,56 +66,65 @@ class DanceStudioApp:
             "Say So": (["Punch", "Arm Roll", "Click", "Fist/Faux Kiss", "Body Roll", "Walk Away", "Hip Sway", "Heart Hands", "Hair Twirl", "Disco Point", "Spin Turn", "Shoulder Shimmy", "Final Strike"], 1.0, "Hard"),
         }
         
-        self.all_moves = list(set([m for moves, d, meta in self.dances.values() for m in moves]))
-        self.session = DanceSession("Pro Dancer")
-        self.current_dance = None
-        self.test_step = 0
-        self.mistakes = 0
-        self.is_paused = False
-        self.colors = ["#FF5733", "#33FF57", "#3357FF", "#F333FF", "#FF33A1", "#F3FF33"]
+        self.all_moves = list(set([m for moves, d, meta in self.dances.values() for m in moves]))         # Collect every unique move from all dances into a single list for the "multiple choice" test mode
+        self.session = DanceSession("Pro Dancer") # Initialize a separate tracking object for the user's current session
+        self.current_dance = None # Placeholder to track which dance the user just picked
+        self.test_step = 0 # Tracks which step the user is currently on during an assessment
+        self.mistakes = 0 # Tracks how many wrong answers the user has given
+        self.is_paused = False # A flag to check if the dance display should be frozen
+        self.colors = ["#FF5733", "#33FF57", "#3357FF", "#F333FF", "#FF33A1", "#F3FF33"] # List of hex codes for colorful text
 
-        self.setup_main_menu()
+        self.setup_main_menu() # Call the method to build the first screen the user sees
 
-    def setup_main_menu(self):
-        self.clear_screen()
-        self.main_frame = tk.Frame(self.root, bg="#1a1a1a")
-        self.main_frame.pack(fill="both", expand=True)
+        # Creates the main menu layout
+    def setup_main_menu(self): 
+        self.clear_screen() # Wipe the window clean of any previous menus/widgets
+        self.main_frame = tk.Frame(self.root, bg="#1a1a1a") # Create a container (Frame) with a dark background
+        self.main_frame.pack(fill="both", expand=True) # Make the container fill the entire window
 
+         # Create a header label with fancy font and colors
         tk.Label(self.main_frame, text="🕺 DANCE STUDIO v2 💃", font=("Verdana", 24, "bold"), fg="cyan", bg="#1a1a1a").pack(pady=20)
 
+        # Create a box area where the dance moves will actually be displayed
         self.visual_box = tk.Frame(self.main_frame, width=400, height=150, bg="#333", relief="ridge", bd=5)
         self.visual_box.pack(pady=10)
-        self.visual_box.pack_propagate(False)
+        self.visual_box.pack_propagate(False) # Stop the box from shrinking to fit the text inside
 
+        # The actual label where the name of the move (e.g., "Body Roll") appears
         self.move_display = tk.Label(self.visual_box, text="READY?", font=("Impact", 40), fg="white", bg="#333")
         self.move_display.pack(expand=True)
 
+        # A smaller status label to give the user instructions
         self.status = tk.Label(self.main_frame, text="Select a routine...", fg="#00FF00", bg="#1a1a1a")
         self.status.pack(pady=10)
 
-        # Dance Buttons
+        # Container for the dance selection buttons
         btn_zone = tk.Frame(self.main_frame, bg="#1a1a1a")
-        btn_zone.pack()
-        for name in self.dances:
+        btn_zone.pack() # Loop through the dance dictionary and create a button for each one
+        for name in self.dances: # lambda n=name: self.play_dance(n) tells the button to run play_dance with that specific dance name when clicked
             tk.Button(btn_zone, text=f"{name} ({self.dances[name][2]})", width=35, 
                       command=lambda n=name: self.play_dance(n)).pack(pady=2)
 
-        # Global Buttons
+        # Button to open the leaderboard
         tk.Button(self.main_frame, text="🏆 VIEW LEADERBOARD", font=("Arial", 10, "bold"), 
                   bg="#f1c40f", command=self.show_leaderboard).pack(pady=15)
-        
+
+        # A small frame at the bottom for utility buttons
         nav_frame = tk.Frame(self.main_frame, bg="#1a1a1a")
         nav_frame.pack()
         tk.Button(nav_frame, text="Reset Session", command=self.reset_session_ui).pack(side="left", padx=5)
         tk.Button(nav_frame, text="View Stats", command=self.show_stats).pack(side="left", padx=5)
 
+    # Removes every widget (button, label, etc.) currently in the window to make room for a new screen
     def clear_screen(self):
         for widget in self.root.winfo_children():
             widget.destroy()
 
+    # Starts the visual display of a dance routine
     def play_dance(self, name):
         self.current_dance = name
         moves, delay, _ = self.dances[name]
+        # A nested function that will run in the background so the app doesn't freeze
         def run():
             for i, move in enumerate(moves):
                 while self.is_paused: time.sleep(0.1)
