@@ -52,7 +52,7 @@ class DanceStudioApp: # Define the main application class for the Dance Studio a
     def __init__(self, root): # The initialization method that runs when you first create the app
         self.root = root # Store the main window (root) as an attribute of the class
         self.root.title("Pro Dance Trainer v2.0 - Leaderboard Edition") # Set the title at the top of the window
-        self.root.geometry("800x900") ")  # Set the starting width and height of the window in pixels
+        self.root.geometry("800x900")   # Set the starting width and height of the window in pixels
 
             # A dictionary storing dance routines: "Name": ([List of Moves], Speed/Delay, "Difficulty")
         self.dances = { 
